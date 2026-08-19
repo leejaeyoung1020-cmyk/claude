@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { pendingReceivedRequestCount } from '@/lib/mock/api'
+import { getCurrentProfile } from '@/lib/mock/auth'
 
 const LINKS = [
   { href: '/search', label: '검색' },
@@ -15,14 +16,18 @@ const LINKS = [
 export default function NavBar() {
   const pathname = usePathname()
   const [pending, setPending] = useState(0)
+  const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
     setPending(pendingReceivedRequestCount())
+    setIsAdmin(Boolean(getCurrentProfile()?.is_admin))
   }, [pathname])
+
+  const links = isAdmin ? [...LINKS, { href: '/admin', label: '관리자' }] : LINKS
 
   return (
     <nav className="mx-auto flex max-w-2xl gap-1 px-6 pt-6 text-sm">
-      {LINKS.map((link) => {
+      {links.map((link) => {
         const active = pathname === link.href || pathname?.startsWith(`${link.href}/`)
         return (
           <Link

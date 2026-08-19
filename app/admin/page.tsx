@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { adminMetrics, adminReportQueue } from '@/lib/mock/api'
 import { useCurrentProfile } from '@/lib/mock/useCurrentProfile'
 import type { Metrics, ReportQueueRow } from '@/lib/types'
+import NavBar from '@/components/NavBar'
 import ReportRow from './ReportRow'
 
 /**
@@ -45,18 +46,20 @@ export default function AdminPage() {
 
   if (loading || !profile?.is_admin) {
     return (
-      <main className="mx-auto max-w-3xl px-6 py-10">
+      <main className="mx-auto max-w-2xl px-6 py-10">
         <p className="text-sm text-slate-500">불러오는 중…</p>
       </main>
     )
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-10">
-      <h1 className="text-2xl font-bold text-brand-900">관리자</h1>
-      <p className="mt-1 text-sm text-slate-600">
-        신고가 3명 이상 겹치면 여기 올라와요. 정지 전까지는 계속 정상 노출돼요.
-      </p>
+    <>
+      <NavBar />
+      <main className="mx-auto max-w-2xl px-6 py-10">
+        <h1 className="text-2xl font-bold text-brand-900">관리자</h1>
+        <p className="mt-1 text-sm text-slate-600">
+          신고가 3명 이상 겹치면 여기 올라와요. 정지 전까지는 계속 정상 노출돼요.
+        </p>
 
       {loadError && (
         <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{loadError}</p>
@@ -84,7 +87,8 @@ export default function AdminPage() {
           ))}
         </ul>
       )}
-    </main>
+      </main>
+    </>
   )
 }
 
