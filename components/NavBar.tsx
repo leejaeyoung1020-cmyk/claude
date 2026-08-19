@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { pendingReceivedRequestCount } from '@/lib/mock/api'
 import { getCurrentProfile } from '@/lib/mock/auth'
+import { STORAGE_KEY } from '@/lib/mock/store'
 
 const LINKS = [
   { href: '/search', label: '검색' },
@@ -18,10 +19,25 @@ export default function NavBar() {
   const [pending, setPending] = useState(0)
   const [isAdmin, setIsAdmin] = useState(false)
 
-  useEffect(() => {
+  function refresh() {
     setPending(pendingReceivedRequestCount())
     setIsAdmin(Boolean(getCurrentProfile()?.is_admin))
+  }
+
+  useEffect(() => {
+    refresh()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname])
+
+  useEffect(() => {
+    function onStorage(e: StorageEvent) {
+      if (e.key !== STORAGE_KEY) return
+      refresh()
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const links = isAdmin ? [...LINKS, { href: '/admin', label: '관리자' }] : LINKS
 

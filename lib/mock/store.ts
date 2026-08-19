@@ -79,9 +79,21 @@ export function getStore(): Store {
  * 다른 탭이 localStorage를 바꾼 뒤(storage 이벤트) 부른다. getStore()는
  * 메모리 캐시를 우선 돌려주므로, 이 함수 없이는 이 탭이 자기 자신의
  * persist()로 쓰지 않은 변경은 영영 반영되지 않는다.
+ *
+ * 화면마다 이 함수를 일일이 불러야 한다면, 리스너를 깜빡 빠뜨린 화면은
+ * 계속 예전 캐시를 보여준다 (예: 신청함 화면이 다른 탭에서 받은 신청을
+ * 못 보던 문제). 그래서 아래에서 storage 이벤트를 이 파일이 직접
+ * 구독해, 어떤 화면이 부르든 다음 getStore()가 항상 최신값을 돌려주게
+ * 만든다 — 화면들은 신경 쓸 필요가 없다.
  */
 export function reloadFromStorage() {
   cache = null
+}
+
+if (isBrowser()) {
+  window.addEventListener('storage', (event) => {
+    if (event.key === STORAGE_KEY) reloadFromStorage()
+  })
 }
 
 export function persist(store: Store) {

@@ -34,5 +34,6 @@
 
 1. **`getStore()` 메모리 캐시가 다른 탭의 변경을 못 읽음** — 채팅방의 "실시간" 요구사항(storage 이벤트)이 실제로는 반영되지 않던 문제. `lib/mock/store.ts`에 `reloadFromStorage()`를 추가해 storage 이벤트를 받을 때마다 캐시를 무효화하도록 고쳤다.
 2. **`getMyConversations()`가 차단 여부를 걸러내지 않음** — 차단해도 기존 대화방이 목록에 계속 보이던 문제. 차단 필터를 추가했다.
+3. **신청함·채팅 목록·네비게이션 배지가 다른 탭의 변경을 실시간으로 못 받음** — 배포 후 실사용 중 발견. 1번을 고쳐도 각 화면이 캐시 무효화를 스스로 트리거하지 않으면 "다음에 그 화면에 다시 들어갔을 때만" 반영되는 문제가 남아 있었다. 두 가지로 고쳤다: (a) `lib/mock/store.ts`가 `storage` 이벤트를 스스로 구독해 어떤 화면이든 다음 `getStore()` 호출에서 자동으로 최신값을 받게 하고, (b) `app/requests`·`app/chat`·`components/NavBar.tsx`·`app/search/SearchView.tsx` 각각에 `storage` 리스너를 달아 이미 열려 있는 화면도 새로고침 없이 다시 그려지게 했다. Playwright로 두 탭을 열어 신청→수락→채팅까지 새로고침 없이 반영되는 것을 확인했다.
 
-두 버그 모두 유닛 테스트로 먼저 재현한 뒤 고쳤고, `tests/store.test.ts`·`tests/mockApi.test.ts`에 회귀 테스트로 남아 있다.
+세 버그 모두 유닛 테스트로 먼저 재현한 뒤 고쳤고, `tests/store.test.ts`·`tests/mockApi.test.ts`에 회귀 테스트로 남아 있다.

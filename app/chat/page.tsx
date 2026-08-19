@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { hasCompletedProfile, isSuspended } from '@/lib/mock/auth'
 import { useCurrentProfile } from '@/lib/mock/useCurrentProfile'
 import { getMyConversations, type ConversationSummary } from '@/lib/mock/api'
+import { STORAGE_KEY } from '@/lib/mock/store'
 import Avatar from '@/components/Avatar'
 import NavBar from '@/components/NavBar'
 
@@ -40,6 +41,16 @@ export default function ChatListPage() {
   useEffect(() => {
     if (loading || !profile) return
     setConversations(getMyConversations())
+  }, [loading, profile])
+
+  useEffect(() => {
+    if (loading || !profile) return
+    function onStorage(e: StorageEvent) {
+      if (e.key !== STORAGE_KEY) return
+      setConversations(getMyConversations())
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
   }, [loading, profile])
 
   if (loading || !profile || !hasCompletedProfile(profile) || isSuspended(profile) || conversations === null) {

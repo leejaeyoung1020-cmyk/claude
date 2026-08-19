@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { hasCompletedProfile, isSuspended } from '@/lib/mock/auth'
 import { useCurrentProfile } from '@/lib/mock/useCurrentProfile'
 import { getMyFriendRequests, respondFriendRequest, type FriendRequestRow } from '@/lib/mock/api'
+import { STORAGE_KEY } from '@/lib/mock/store'
 import { ageFromBirthYear } from '@/lib/age'
 import Avatar from '@/components/Avatar'
 import NavBar from '@/components/NavBar'
@@ -47,6 +48,17 @@ export default function RequestsPage() {
   useEffect(() => {
     if (loading || !profile) return
     refresh()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, profile])
+
+  useEffect(() => {
+    if (loading || !profile) return
+    function onStorage(e: StorageEvent) {
+      if (e.key !== STORAGE_KEY) return
+      refresh()
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, profile])
 

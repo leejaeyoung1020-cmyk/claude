@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { searchProfiles, type SearchFilters } from '@/lib/mock/api'
+import { STORAGE_KEY } from '@/lib/mock/store'
 import { defaultSearchFilters, fromQuery, toQuery } from '@/lib/searchParams'
 import { TAGS } from '@/lib/mock/seed'
 import { DEPARTMENTS } from '@/lib/departments'
@@ -33,6 +34,16 @@ export default function SearchView({ myDepartment }: { myDepartment: string }) {
 
   useEffect(() => {
     setResults(searchProfiles(filters))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
+
+  useEffect(() => {
+    function onStorage(e: StorageEvent) {
+      if (e.key !== STORAGE_KEY) return
+      setResults(searchProfiles(filters))
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
