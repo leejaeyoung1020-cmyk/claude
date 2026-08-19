@@ -78,6 +78,29 @@ export function searchProfiles(filters: SearchFilters = {}): ProfileCard[] {
     }))
 }
 
+/** 상대 프로필 화면에서 id 하나로 조회한다. 차단된 사이면 검색과 마찬가지로 보이지 않는다 */
+export function getProfileById(id: string): ProfileCard | null {
+  const me = requireUser()
+  const store = getStore()
+  const p = store.profiles.find((x) => x.id === id)
+  if (!p) return null
+  if (me && isBlockedEitherWay(store, me, id)) return null
+
+  return {
+    id: p.id,
+    nickname: p.nickname,
+    birth_year: p.birth_year,
+    department: p.department,
+    gender: p.gender,
+    bio: p.bio,
+    photo_url: p.photo_url,
+    tag_labels: store.profileTags
+      .filter((t) => t.profile_id === p.id)
+      .map((t) => TAGS.find((tag) => tag.id === t.tag_id)?.label)
+      .filter((label): label is string => Boolean(label)),
+  }
+}
+
 // ---------------------------------------------------------------
 // 친구 신청 (SPEC 4.4 — 하루 5건)
 // ---------------------------------------------------------------
@@ -165,6 +188,17 @@ export function pendingReceivedRequestCount(): number {
   if (!me) return 0
   const store = getStore()
   return store.friendRequests.filter((r) => r.receiver_id === me && r.status === 'pending').length
+}
+
+/**
+ * 상대에게 이미 신청을 보낸 적이 있는지. 상태(대기/수락/거절)와 무관하게 true다 —
+ * sendFriendRequest()가 상태와 무관하게 재신청을 막으므로, 버튼도 그에 맞춰
+ * 한 번 신청하면 계속 "신청함"으로 보여준다 (거절 여부를 화면에 드러내지 않는다, SPEC 4.4)
+ */
+export function hasSentRequestTo(targetId: string): boolean {
+  const me = requireUser()
+  if (!me) return false
+  return getStore().friendRequests.some((r) => r.sender_id === me && r.receiver_id === targetId)
 }
 
 /** 내가 고른 관심사 태그 id 목록. 내 프로필 편집 화면에서 초기값으로 쓴다 */

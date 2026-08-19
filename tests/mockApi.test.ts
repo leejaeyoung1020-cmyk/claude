@@ -6,6 +6,8 @@ import {
   blockUser,
   getConversationMessages,
   getMyConversations,
+  getProfileById,
+  hasSentRequestTo,
   pendingReceivedRequestCount,
   reportUser,
   searchProfiles,
@@ -157,6 +159,36 @@ describe('채팅 (SPEC 4.4)', () => {
     const before = getConversationMessages('c1').length
     sendMessage('c1', '테스트 메시지')
     expect(getConversationMessages('c1').length).toBe(before + 1)
+  })
+})
+
+describe('getProfileById — 상대 프로필 화면용', () => {
+  it('있는 사람이면 검색 결과와 같은 모양으로 돌려준다', () => {
+    const profile = getProfileById('u9')
+    expect(profile?.nickname).toBe('주원')
+    expect(profile?.tag_labels).toContain('사진')
+  })
+
+  it('없는 id면 null이다', () => {
+    expect(getProfileById('없는아이디')).toBeNull()
+  })
+
+  it('서로 차단한 사이면 null이다', () => {
+    blockUser('u9')
+    expect(getProfileById('u9')).toBeNull()
+  })
+})
+
+describe('hasSentRequestTo — 상대 프로필의 신청 버튼 비활성화용', () => {
+  beforeEach(() => setCurrentUserId('u11'))
+
+  it('신청 전에는 false다', () => {
+    expect(hasSentRequestTo('u3')).toBe(false)
+  })
+
+  it('신청 후에는 true다 (거절당해도 계속 true — 재신청은 sendFriendRequest가 막는다)', () => {
+    sendFriendRequest('u3', '안녕하세요')
+    expect(hasSentRequestTo('u3')).toBe(true)
   })
 })
 
