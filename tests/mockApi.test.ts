@@ -6,10 +6,12 @@ import {
   blockUser,
   getConversationMessages,
   getMyConversations,
+  getMyFriendRequests,
   getProfileById,
   hasSentRequestTo,
   pendingReceivedRequestCount,
   reportUser,
+  respondFriendRequest,
   searchProfiles,
   sendFriendRequest,
   sendMessage,
@@ -176,6 +178,31 @@ describe('getProfileById — 상대 프로필 화면용', () => {
   it('서로 차단한 사이면 null이다', () => {
     blockUser('u9')
     expect(getProfileById('u9')).toBeNull()
+  })
+})
+
+describe('getMyFriendRequests — 신청함 화면용', () => {
+  it('u2로 로그인하면 u1이 보낸 대기 중 신청이 받은 목록에 보인다', () => {
+    setCurrentUserId('u2')
+    const { received } = getMyFriendRequests()
+    const row = received.find((r) => r.peer.id === 'u1')
+    expect(row?.status).toBe('pending')
+    expect(row?.greeting).toContain('카페 투어')
+  })
+
+  it('u1로 로그인하면 u2에게 보낸 신청이 보낸 목록에 보인다', () => {
+    setCurrentUserId('u1')
+    const { sent } = getMyFriendRequests()
+    expect(sent.find((r) => r.peer.id === 'u2')).toBeTruthy()
+  })
+
+  it('거절 상태가 그대로 조회된다 (거절을 화면에서 무응답과 다르게 보여주지 않는 건 화면 쪽 책임이다)', () => {
+    setCurrentUserId('u20')
+    respondFriendRequest('fr2', false) // u3 → u20 신청(fr2)을 u20이 거절
+    setCurrentUserId('u3')
+    const { sent } = getMyFriendRequests()
+    const row = sent.find((r) => r.peer.id === 'u20')
+    expect(row?.status).toBe('rejected')
   })
 })
 

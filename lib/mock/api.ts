@@ -1,4 +1,4 @@
-import type { Gender, Metrics, ProfileCard, ReportQueueRow, ReportReason } from '@/lib/types'
+import type { FriendRequest, Gender, Metrics, ProfileCard, ReportQueueRow, ReportReason } from '@/lib/types'
 import { getCurrentUserId, getStore, persist, randomId, type Store } from './store'
 import { TAGS } from './seed'
 
@@ -199,6 +199,59 @@ export function hasSentRequestTo(targetId: string): boolean {
   const me = requireUser()
   if (!me) return false
   return getStore().friendRequests.some((r) => r.sender_id === me && r.receiver_id === targetId)
+}
+
+export type FriendRequestRow = {
+  id: string
+  peer: ProfileCard
+  greeting: string
+  status: FriendRequest['status']
+  createdAt: string
+}
+
+function toFriendRequestRow(store: Store, request: FriendRequest, peerId: string): FriendRequestRow | null {
+  const p = store.profiles.find((x) => x.id === peerId)
+  if (!p) return null
+  return {
+    id: request.id,
+    greeting: request.greeting,
+    status: request.status,
+    createdAt: request.created_at,
+    peer: {
+      id: p.id,
+      nickname: p.nickname,
+      birth_year: p.birth_year,
+      department: p.department,
+      gender: p.gender,
+      bio: p.bio,
+      photo_url: p.photo_url,
+      tag_labels: store.profileTags
+        .filter((t) => t.profile_id === p.id)
+        .map((t) => TAGS.find((tag) => tag.id === t.tag_id)?.label)
+        .filter((label): label is string => Boolean(label)),
+    },
+  }
+}
+
+/** 신청함 화면(받은/보낸 탭)용. 최신순으로 정렬해 돌려준다 */
+export function getMyFriendRequests(): { received: FriendRequestRow[]; sent: FriendRequestRow[] } {
+  const me = requireUser()
+  if (!me) return { received: [], sent: [] }
+  const store = getStore()
+
+  const received = store.friendRequests
+    .filter((r) => r.receiver_id === me)
+    .map((r) => toFriendRequestRow(store, r, r.sender_id))
+    .filter((row): row is FriendRequestRow => Boolean(row))
+    .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+
+  const sent = store.friendRequests
+    .filter((r) => r.sender_id === me)
+    .map((r) => toFriendRequestRow(store, r, r.receiver_id))
+    .filter((row): row is FriendRequestRow => Boolean(row))
+    .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+
+  return { received, sent }
 }
 
 /** 내가 고른 관심사 태그 id 목록. 내 프로필 편집 화면에서 초기값으로 쓴다 */
