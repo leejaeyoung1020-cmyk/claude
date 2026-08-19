@@ -101,21 +101,21 @@ Phase 4를 끝내면 **B에게 반드시 알린다.** B의 Phase 6이 내 파일
 
 `lib/limits.ts`(`DAILY_REQUEST_LIMIT`·`remainingRequests()`)와 `tests/limits.test.ts`는 Phase 0에서 이미 끝났다. 새로 만들지 않고 가져다 쓴다. 실제 판정은 `lib/mock/api.ts`의 `sendFriendRequest()`가 한다 — `lib/limits.ts`는 화면 표시용 계산일 뿐이다.
 
-- [ ] `remainingRequestsToday()`(`lib/mock/api.ts`)로 실제 남은 횟수를 가져와 화면에 표시
+- [x] `remainingRequestsToday()`(`lib/mock/api.ts`)로 실제 남은 횟수를 가져와 화면에 표시
 
 ### 4-2 상대 프로필 + 신청
 
-- [ ] `app/profile/[id]/page.tsx` — 상대 프로필 전체 표시 (`ProfileCard`보다 크게)
-- [ ] "친구 신청" 버튼 + 옆에 `오늘 {보낸수}/5` 카운터 표시
-- [ ] 버튼 클릭 → 인사말 입력창(1~200자, 글자 수 표시) 모달
-- [ ] `lib/mock/api.ts`의 `sendFriendRequest(receiverId, greeting)`를 화면에서 직접 부른다 (서버 액션 없음)
-- [ ] 오류 메시지를 그대로 사용자에게 보여준다 (한국어로 이미 작성돼 있다)
-- [ ] 이미 신청한 상대면 버튼을 "신청함 (대기 중)"으로 바꾸고 비활성화
-- [ ] 🔍 인사말 비우고 신청 → "인사말을 입력해 주세요"
-- [ ] 🔍 신청 성공 → 버튼이 "신청함"으로 바뀌고 카운터가 1/5로 증가
-- [ ] 🔍 서로 다른 5명에게 신청 후 6번째 → "하루에 보낼 수 있는 신청은 5건입니다"
-- [ ] 🔍 같은 사람에게 두 번 신청 → 막힌다
-- [ ] 💾 `feat: 친구 신청 보내기 · 하루 5건 상한`
+- [x] `app/profile/[id]/page.tsx` — 상대 프로필 전체 표시 (`ProfileCard`보다 크게)
+- [x] "친구 신청" 버튼 + 옆에 `오늘 {보낸수}/5` 카운터 표시
+- [x] 버튼 클릭 → 인사말 입력창(1~200자, 글자 수 표시) 모달 (`GreetingDialog.tsx`)
+- [x] `lib/mock/api.ts`의 `sendFriendRequest(receiverId, greeting)`를 화면에서 직접 부른다 (서버 액션 없음)
+- [x] 오류 메시지를 그대로 사용자에게 보여준다 (한국어로 이미 작성돼 있다)
+- [x] 이미 신청한 상대면 버튼을 "신청함 (대기 중)"으로 바꾸고 비활성화 (`hasSentRequestTo()` 추가)
+- [x] 🔍 인사말 비우고 신청 → "인사말을 입력해 주세요" (Playwright로 확인)
+- [x] 🔍 신청 성공 → 버튼이 "신청함"으로 바뀌고 카운터가 1/5로 증가 (Playwright로 확인)
+- [x] 🔍 서로 다른 5명에게 신청 후 6번째 → "하루에 보낼 수 있는 신청은 5건입니다" (Playwright로 확인)
+- [x] 🔍 같은 사람에게 두 번 신청 → 막힌다 (버튼 자체가 disabled라 클릭 불가능한 것까지 확인)
+- [x] 💾 `feat: 친구 신청 보내기 · 하루 5건 상한`
 
 ### 4-3 신청 목록
 
