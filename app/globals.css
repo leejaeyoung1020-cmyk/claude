@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+/*
+  화면 전반의 색은 파랑 계열로 통일한다.
+  (상위 폴더의 다른 연습 페이지들과 같은 계열이다)
+    #1e3a8a  진한 남색   — 제목
+    #2563eb  기본 파랑   — 버튼·강조
+    #3b82f6  밝은 파랑   — 보조
+    #dbeafe  연한 파랑   — 태그 배경
+    #eff6ff  아주 연한   — 카드 배경
+*/
+
+:root {
+  --brand-900: #1e3a8a;
+  --brand-600: #2563eb;
+  --brand-500: #3b82f6;
+  --brand-100: #dbeafe;
+  --brand-50:  #eff6ff;
+}
+
+@theme inline {
+  --color-brand-900: var(--brand-900);
+  --color-brand-600: var(--brand-600);
+  --color-brand-500: var(--brand-500);
+  --color-brand-100: var(--brand-100);
+  --color-brand-50:  var(--brand-50);
+}
+
+body {
+  font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+}
