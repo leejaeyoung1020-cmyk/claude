@@ -3,13 +3,9 @@
 import { useState } from 'react'
 import { adminResolveReport } from '@/lib/mock/api'
 import { REPORT_REASON_LABEL, type ReportQueueRow } from '@/lib/types'
+import Avatar from '@/components/Avatar'
 
-/**
- * 신고 검토 대기 목록 한 줄.
- *
- * 아바타는 임시로 이니셜만 보여준다. B의 components/Avatar.tsx가
- * 나오면 교체한다.
- */
+/** 신고 검토 대기 목록 한 줄. */
 export default function ReportRow({
   row,
   onResolved,
@@ -36,9 +32,7 @@ export default function ReportRow({
     <li className="rounded-xl border border-slate-200 bg-white p-4">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-100 text-sm font-semibold text-brand-900">
-            {row.nickname.slice(0, 1)}
-          </div>
+          <Avatar photoUrl={null} nickname={row.nickname} seed={row.reported_id} />
           <div>
             <p className="font-semibold text-slate-900">
               {row.nickname}

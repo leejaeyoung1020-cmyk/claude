@@ -4,16 +4,10 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createProfile } from '@/lib/mock/auth'
 import { DEPARTMENTS } from '@/lib/departments'
-import { MAX_TAGS } from '@/lib/validation'
 import { MAX_AGE, MIN_AGE } from '@/lib/age'
 import type { Gender, Tag } from '@/lib/types'
+import TagPicker from '@/components/TagPicker'
 
-/**
- * 온보딩 폼.
- *
- * 태그 선택 부분은 임시 구현이다.
- * B가 components/TagPicker.tsx 를 완성하면 그것으로 교체한다 (팀 규칙: 같은 컴포넌트를 두 개 만들지 않는다).
- */
 export default function OnboardingForm({ tags }: { tags: Tag[] }) {
   const router = useRouter()
   const [nickname, setNickname] = useState('')
@@ -22,7 +16,6 @@ export default function OnboardingForm({ tags }: { tags: Tag[] }) {
   const [gender, setGender] = useState<Gender | ''>('')
   const [bio, setBio] = useState('')
   const [selected, setSelected] = useState<number[]>([])
-  const [tagNotice, setTagNotice] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
 
@@ -31,21 +24,6 @@ export default function OnboardingForm({ tags }: { tags: Tag[] }) {
     { length: MAX_AGE - MIN_AGE + 1 },
     (_, i) => currentYear - MIN_AGE - i,
   )
-
-  function toggleTag(id: number) {
-    setSelected((prev) => {
-      if (prev.includes(id)) {
-        setTagNotice(null)
-        return prev.filter((t) => t !== id)
-      }
-      if (prev.length >= MAX_TAGS) {
-        setTagNotice(`최대 ${MAX_TAGS}개까지 고를 수 있어요`)
-        return prev
-      }
-      setTagNotice(null)
-      return [...prev, id]
-    })
-  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -166,31 +144,13 @@ export default function OnboardingForm({ tags }: { tags: Tag[] }) {
           <span className="block text-sm font-medium text-slate-700">
             관심사 태그
             <span className="ml-1 text-xs font-normal text-slate-500">
-              ({selected.length}/{MAX_TAGS})
+              ({selected.length}/5)
             </span>
           </span>
         </div>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {tags.map((tag) => {
-            const on = selected.includes(tag.id)
-            return (
-              <button
-                key={tag.id}
-                type="button"
-                onClick={() => toggleTag(tag.id)}
-                aria-pressed={on}
-                className={
-                  on
-                    ? 'rounded-full bg-brand-600 px-3 py-1.5 text-sm text-white'
-                    : 'rounded-full bg-brand-50 px-3 py-1.5 text-sm text-brand-900 ring-1 ring-brand-100'
-                }
-              >
-                {tag.label}
-              </button>
-            )
-          })}
+        <div className="mt-2">
+          <TagPicker tags={tags} selected={selected} onChange={setSelected} />
         </div>
-        {tagNotice && <p className="mt-2 text-xs text-amber-700">{tagNotice}</p>}
       </div>
 
       <div>
