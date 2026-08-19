@@ -20,7 +20,7 @@ import {
  * useEffect 안에서 store 함수를 호출해야 한다.
  */
 
-const STORAGE_KEY = 'friend-app-sim-v1'
+export const STORAGE_KEY = 'friend-app-sim-v1'
 const CURRENT_USER_KEY = 'friend-app-sim-current-user'
 
 export type Block = { blocker_id: string; blocked_id: string; created_at: string }
@@ -73,6 +73,15 @@ export function getStore(): Store {
     persist(cache)
   }
   return cache
+}
+
+/**
+ * 다른 탭이 localStorage를 바꾼 뒤(storage 이벤트) 부른다. getStore()는
+ * 메모리 캐시를 우선 돌려주므로, 이 함수 없이는 이 탭이 자기 자신의
+ * persist()로 쓰지 않은 변경은 영영 반영되지 않는다.
+ */
+export function reloadFromStorage() {
+  cache = null
 }
 
 export function persist(store: Store) {
