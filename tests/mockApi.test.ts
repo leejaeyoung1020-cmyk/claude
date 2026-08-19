@@ -6,6 +6,7 @@ import {
   blockUser,
   getConversationMessages,
   getMyConversations,
+  pendingReceivedRequestCount,
   reportUser,
   searchProfiles,
   sendFriendRequest,
@@ -156,6 +157,18 @@ describe('채팅 (SPEC 4.4)', () => {
     const before = getConversationMessages('c1').length
     sendMessage('c1', '테스트 메시지')
     expect(getConversationMessages('c1').length).toBe(before + 1)
+  })
+})
+
+describe('pendingReceivedRequestCount — 신청함 배지용', () => {
+  it('내가 받은 대기 중 신청 개수만 센다 (보낸 신청·수락된 신청은 빼고)', () => {
+    setCurrentUserId('u2') // 시드에서 u1이 u2에게 대기 중 신청 1건을 보냈다
+    expect(pendingReceivedRequestCount()).toBe(1)
+  })
+
+  it('로그인하지 않았으면 0이다', () => {
+    setCurrentUserId(null)
+    expect(pendingReceivedRequestCount()).toBe(0)
   })
 })
 

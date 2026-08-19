@@ -159,6 +159,14 @@ export function respondFriendRequest(requestId: string, accept: boolean): Result
   return ok(conv.id)
 }
 
+/** 내가 받은 대기 중 신청 개수. 상단 네비게이션의 신청함 배지에 쓴다 */
+export function pendingReceivedRequestCount(): number {
+  const me = requireUser()
+  if (!me) return 0
+  const store = getStore()
+  return store.friendRequests.filter((r) => r.receiver_id === me && r.status === 'pending').length
+}
+
 /** 내가 고른 관심사 태그 id 목록. 내 프로필 편집 화면에서 초기값으로 쓴다 */
 export function myTagIds(): number[] {
   const me = requireUser()

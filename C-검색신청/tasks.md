@@ -57,37 +57,39 @@ Phase 4를 끝내면 **B에게 반드시 알린다.** B의 Phase 6이 내 파일
 
 ### 3-1 필터 파라미터 (테스트 먼저)
 
-- [ ] `tests/searchparams.test.ts` 작성 — 기본 필터 객체 → `{ gender: null, minAge: 19, maxAge: 30, department: null, tagIds: [] }`, URL 쿼리 왕복 변환이 원래 값과 같다
-- [ ] `npx vitest run` → 실패 확인 🔍
-- [ ] `lib/searchParams.ts`에 `toQuery()` / `fromQuery()` 구현. **성별 기본값은 `null`(상관없음)** 🔍
-- [ ] `npx vitest run` → 통과 확인 🔍
-- [ ] 💾 `feat: 검색 필터 URL 직렬화`
+- [x] `tests/searchparams.test.ts` 작성 — 기본 필터 객체 → `{ gender: null, minAge: 19, maxAge: 30, department: null, tagIds: [] }`, URL 쿼리 왕복 변환이 원래 값과 같다
+- [x] `npx vitest run` → 실패 확인 🔍
+- [x] `lib/searchParams.ts`에 `toQuery()` / `fromQuery()` 구현. **성별 기본값은 `null`(상관없음)** 🔍
+- [x] `npx vitest run` → 통과 확인 🔍
+- [x] 💾 `feat: 검색 필터 URL 직렬화`
 
 ### 3-2 프로필 카드
 
-- [ ] `components/ProfileCard.tsx` — 아바타 · 닉네임 · `{나이}세 · {학과}` · 태그 칩 · 한 줄 소개
-- [ ] B의 `Avatar`, `TagChip`을 재사용한다 (직접 새로 만들지 않는다)
-- [ ] 카드 클릭 시 `/profile/[id]`로 이동
-- [ ] 🔍 더미 사용자 카드가 정상적으로 그려진다
-- [ ] 💾 `feat: 프로필 카드 컴포넌트`
+- [x] `components/ProfileCard.tsx` — 아바타 · 닉네임 · `{나이}세 · {학과}` · 태그 칩 · 한 줄 소개
+- [x] B의 `Avatar`, `TagChip`을 재사용한다 (직접 새로 만들지 않는다)
+- [x] 카드 클릭 시 `/profile/[id]`로 이동
+- [x] 🔍 더미 사용자 카드가 정상적으로 그려진다 (테스트 + Playwright 스크린샷으로 확인)
+- [x] 💾 `feat: 프로필 카드 컴포넌트`
 
 ### 3-3 검색 화면
 
-- [ ] `app/search/page.tsx` 뼈대 + 필터 없이 `lib/mock/api.ts`의 `searchProfiles()` 호출해 목록 표시
-- [ ] 🔍 내 카드가 결과에 없는지 확인
-- [ ] 성별 선택 UI 추가 (남 / 여 / **상관없음(기본)**)
-- [ ] 나이대 슬라이더 추가 (19~30)
-- [ ] 학과 선택 추가 (전체 / 특정 학과 / 내 학과만)
-- [ ] 관심사 태그 다중 선택 추가 (B의 `TagPicker`에 `maxCount` 없이 넘긴다)
-- [ ] 필터 변경 시 URL 쿼리 갱신 + 재검색
-- [ ] 결과 0명일 때 "조건을 넓혀보세요" + 필터 초기화 버튼
-- [ ] 🔍 성별 "여" → 여성만 나온다
-- [ ] 🔍 태그 "게임" → 게임 태그 보유자만 나온다
-- [ ] 🔍 태그 "게임"+"등산" → 둘 중 하나라도 가진 사람이 나온다 (**둘 다 가진 사람만 나오면 버그다**)
-- [ ] 🔍 나이대 19–20으로 좁힘 → 결과가 줄고 0명이면 안내 문구
-- [ ] 🔍 필터 건 상태로 새로고침 → 필터 유지
-- [ ] 🔍 정렬이 최근 접속순인지 확인
-- [ ] 💾 `feat: 조건 검색 · 필터 4종`
+- [x] `app/search/page.tsx` 뼈대 + 필터 없이 `lib/mock/api.ts`의 `searchProfiles()` 호출해 목록 표시
+- [x] 🔍 내 카드가 결과에 없는지 확인
+- [x] 성별 선택 UI 추가 (남 / 여 / **상관없음(기본)**)
+- [x] 나이대 슬라이더 추가 (19~30)
+- [x] 학과 선택 추가 (전체 / 특정 학과 / 내 학과만)
+- [x] 관심사 태그 다중 선택 추가 (`TagPicker`에 `maxCount={전체 태그 개수}`를 넘겨 사실상 무제한으로 — 기본값 5인 `maxCount` prop 자체를 없애면 B의 기존 테스트·프로필 편집 화면이 깨지므로, 호출부에서 전체 개수를 넘기는 방식으로 우회했다)
+- [x] 필터 변경 시 URL 쿼리 갱신 + 재검색
+- [x] 결과 0명일 때 "조건을 넓혀보세요" + 필터 초기화 버튼
+- [x] 🔍 성별 "여" → 여성만 나온다 (Playwright로 확인 — 도윤(남) 안 보임)
+- [x] 🔍 태그 "게임" → 게임 태그 보유자만 나온다 (Playwright로 확인 — 3명)
+- [x] 🔍 태그 "게임"+"보드게임" → 둘 중 하나라도 가진 사람이 나온다 (Playwright로 확인 — AND였다면 2명으로 줄어야 하는데 3명 그대로 유지됨)
+- [x] 🔍 나이대 19–19로 좁힘 → 결과 0명 + 안내 문구 (Playwright로 확인)
+- [x] 🔍 필터 건 상태로 새로고침 → 필터 유지 (Playwright로 확인 — URL 쿼리 그대로 유지)
+- [x] 🔍 정렬이 최근 접속순인지 확인 (`searchProfiles()`가 이미 `last_seen_at` 내림차순 정렬 — 시드 순서(민준→다인)와 스크린샷이 일치)
+- [x] 💾 `feat: 조건 검색 · 필터 4종`
+
+> 추가로 만든 것: `components/NavBar.tsx`(검색·신청함·내 프로필 링크, 신청함 배지)와 `lib/mock/api.ts`의 `pendingReceivedRequestCount()` — 4-3의 "받은 신청 배지" 요구사항을 위해 A 소유 파일에 작은 순수 조회 함수 하나를 추가했다.
 
 ---
 
