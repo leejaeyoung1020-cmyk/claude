@@ -1,5 +1,5 @@
-// DB 테이블과 RPC 반환값의 타입.
-// 스키마와 짝을 이루므로 supabase/migrations/**를 고칠 때 여기도 같이 고친다.
+// 시뮬레이션 데이터 모델의 타입.
+// lib/mock/store.ts가 이 형태로 localStorage에 저장한다.
 // 이 파일은 A만 수정한다 (팀 규칙).
 
 export type Gender = 'male' | 'female'
@@ -27,6 +27,8 @@ export type ReportStatus = 'pending' | 'dismissed' | 'warned' | 'suspended'
 
 export type Profile = {
   id: string
+  /** 로그인 조회용. 화면에는 절대 표시하지 않는다 (SPEC 4.2 — 이메일은 비공개) */
+  email?: string
   nickname: string
   birth_year: number
   department: string

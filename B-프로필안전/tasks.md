@@ -2,7 +2,9 @@
 
 **맡는 것:** 프로필 조회·편집, 관심사 태그 선택기, 사진 업로드, 차단, 신고
 **담당 Phase:** 2 · 6
-**주로 건드리는 파일:** `app/me`, `components/TagPicker.tsx` `TagChip.tsx` `Avatar.tsx` `ReportDialog.tsx`, `app/actions/profile.ts` `safety.ts`, `lib/age.ts`
+**주로 건드리는 파일:** `app/me`, `components/TagPicker.tsx` `TagChip.tsx` `Avatar.tsx` `ReportDialog.tsx`, `lib/age.ts`
+
+**서버가 없다 (2026-08-19 결정).** `app/actions/*.ts` 서버 액션은 만들지 않는다 — 화면에서 `lib/mock/api.ts`·`lib/mock/auth.ts`의 함수를 직접 부른다. 자세한 내용은 `../CLAUDE.md`와 `../plan.md`를 본다.
 
 참고 문서: [../plan.md](../plan.md) · [../SPEC.md](../SPEC.md) · [../tasks.md](../tasks.md)
 
@@ -10,7 +12,7 @@
 
 ## 시작 전에 알아야 할 것
 
-**시작 조건:** A가 Phase 0을 끝내고 "시작해도 됨"이라고 알리면 시작한다. 그때 더미 사용자 20명과 태그 20개가 이미 DB에 들어 있으므로, **A의 인증(Phase 1)이 끝나기를 기다릴 필요가 없다.**
+**시작 조건:** A의 Phase 0 코드(`lib/mock/**`)가 `main`에 있으면 바로 시작한다. 계정도 서버도 필요 없다 — `npm install && npm run dev`만 하면 더미 사용자 20명과 태그 20개가 이미 들어 있다. **A의 로그인 화면(Phase 1)이 끝나기를 기다릴 필요도 없다.**
 
 **내가 만들어서 남에게 넘기는 것 — 팀에서 가장 많이 재사용되는 컴포넌트다**
 
@@ -29,8 +31,8 @@
 
 | 받는 것 | 준 사람 | 언제 |
 |---|---|---|
-| DB 스키마 · RPC · `lib/types.ts` | A | Phase 0 끝 |
-| 로그인 세션 | A | Phase 1 끝 (없으면 SQL로 더미 계정 만들어 진행) |
+| `lib/mock/**` · `lib/types.ts` | A | Phase 0 끝 |
+| `useCurrentProfile()` 훅으로 읽는 로그인 상태 | A | Phase 1 끝 (없으면 `lib/mock/store.ts`의 `setCurrentUserId('u1')`을 콘솔에서 직접 불러 진행) |
 
 **파일이 겹치는 곳 — 미리 합의한다**
 
@@ -86,10 +88,10 @@
 
 - [ ] `app/me/page.tsx` — 현재 프로필을 불러와 폼에 채운다
 - [ ] 태그를 화면에서 **가장 크게** 배치
-- [ ] `app/actions/profile.ts`에 `updateProfile()` 추가
+- [ ] `lib/mock/auth.ts`에 `updateProfile()` 추가를 A에게 요청 (지금은 `createProfile()`만 있다)
 - [ ] 닉네임 12자, 한 줄 소개 60자 글자 수 카운터 표시
-- [ ] 사진 업로드 → Supabase Storage `avatars` 버킷, 파일명은 `{user_id}.{확장자}`
-- [ ] 5MB 초과 또는 이미지가 아닌 파일이면 업로드 거부 + 안내 문구
+- [ ] **사진 업로드는 서버 저장소가 없다.** `FileReader.readAsDataURL()`로 base64 문자열을 만들어 `profile.photo_url`에 그대로 저장한다
+- [ ] 5MB 초과 또는 이미지가 아닌 파일이면 업로드 거부 + 안내 문구 (`localStorage` 용량이 작으므로 이 제한이 특히 중요하다)
 - [ ] 🔍 사진 없이 저장 → 기본 아바타가 보인다
 - [ ] 🔍 사진 업로드 → 새로고침해도 사진이 유지된다
 - [ ] 🔍 닉네임 13자 입력 → 저장이 막히고 오류 문구가 뜬다
@@ -114,7 +116,7 @@
 
 ### 6-1 차단
 
-- [ ] `app/actions/safety.ts`에 `blockUser()` / `unblockUser()` — `block_user` / `unblock_user` RPC 호출
+- [ ] `lib/mock/api.ts`의 `blockUser()` / `unblockUser()`를 화면에서 직접 부른다 (서버 액션 없음)
 - [ ] `app/profile/[id]/page.tsx`에 "이 사람 숨기기" 버튼 추가 (**C와 합의하고 작업**)
 - [ ] 확인 창 문구를 위 표대로 넣는다
 - [ ] **문구에 "제재/정지/처벌"이라는 단어가 없는지 확인** 🔍 (SPEC 4.5 — 차단은 벌이 아니다)
@@ -132,12 +134,12 @@
 - [ ] `components/ReportDialog.tsx` — 사유 6종 라디오 + 상세 입력(선택) + 제출
 - [ ] 사유 6종: 욕설·비하 / 성적 불쾌감 / 사기·홍보 / 만남 강요 / 프로필 사칭 / 기타
 - [ ] 확인 문구를 위 표대로 넣는다
-- [ ] `reportUser()` 서버 액션 → `report_user` RPC 호출
+- [ ] `lib/mock/api.ts`의 `reportUser()`를 화면에서 직접 부른다 (서버 액션 없음)
 - [ ] 상대 프로필과 대화방 양쪽에 "신고하기" 진입점 추가 (**대화방은 D와 합의 후 작업**)
 - [ ] 같은 사람을 두 번 신고하면 "이미 신고한 상대입니다" 표시
-- [ ] 🔍 신고 후 `reports` 테이블에 행이 생긴다
+- [ ] 🔍 신고 후 개발자 도구의 `localStorage`(`friend-app-sim-v1`)에서 `reports`에 행이 생긴 것을 확인한다
 - [ ] 🔍 신고 후 `blocks`에 **양방향 2행**이 생긴다
-- [ ] 🔍 서로 다른 계정 3개로 같은 사람 신고 → `select * from report_queue;` 에 나온다
+- [ ] 🔍 다른 탭 3개(계정 3개)로 같은 사람을 신고 → 관리자 계정의 `/admin`에 그 사람이 뜬다
 - [ ] 🔍 그 사람이 **아직 검색에 정상적으로 나온다** (자동 정지 없음 — SPEC 4.5)
 - [ ] A에게 알림 — 신고 데이터가 쌓였으니 Phase 7(관리자 화면) 시작 가능
 - [ ] 💾 `feat: 신고 · 자동 상호 차단`

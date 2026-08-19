@@ -1,23 +1,36 @@
 'use client'
 
-import { useActionState, useState } from 'react'
-import { resolveReport, type AdminActionState } from '@/app/actions/admin'
+import { useState } from 'react'
+import { adminResolveReport } from '@/lib/mock/api'
 import { REPORT_REASON_LABEL, type ReportQueueRow } from '@/lib/types'
-
-const initial: AdminActionState = { error: null }
 
 /**
  * 신고 검토 대기 목록 한 줄.
  *
- * TagPicker·Avatar 와 마찬가지로 아바타 자리는 임시로 이니셜만 보여준다.
- * B의 components/Avatar.tsx 가 나오면 교체한다.
+ * 아바타는 임시로 이니셜만 보여준다. B의 components/Avatar.tsx가
+ * 나오면 교체한다.
  */
-export default function ReportRow({ row }: { row: ReportQueueRow }) {
-  const [state, formAction, pending] = useActionState(resolveReport, initial)
+export default function ReportRow({
+  row,
+  onResolved,
+}: {
+  row: ReportQueueRow
+  onResolved: () => void
+}) {
   const [days, setDays] = useState(30)
+  const [error, setError] = useState<string | null>(null)
+  const [pending, setPending] = useState(false)
 
   const suspended =
     row.suspended_until && new Date(row.suspended_until).getTime() > Date.now()
+
+  function resolve(action: 'dismissed' | 'warned' | 'suspended') {
+    setPending(true)
+    const result = adminResolveReport(row.reported_id, action, days)
+    setPending(false)
+    if (result.error) setError(result.error)
+    else onResolved()
+  }
 
   return (
     <li className="rounded-xl border border-slate-200 bg-white p-4">
@@ -54,22 +67,18 @@ export default function ReportRow({ row }: { row: ReportQueueRow }) {
         ))}
       </div>
 
-      <form action={formAction} className="mt-3 flex flex-wrap items-center gap-2">
-        <input type="hidden" name="reported_id" value={row.reported_id} />
-
+      <div className="mt-3 flex flex-wrap items-center gap-2">
         <button
-          type="submit"
-          name="action"
-          value="dismissed"
+          type="button"
+          onClick={() => resolve('dismissed')}
           disabled={pending}
           className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-60"
         >
           기각
         </button>
         <button
-          type="submit"
-          name="action"
-          value="warned"
+          type="button"
+          onClick={() => resolve('warned')}
           disabled={pending}
           className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-sm text-amber-800 hover:bg-amber-100 disabled:opacity-60"
         >
@@ -79,7 +88,6 @@ export default function ReportRow({ row }: { row: ReportQueueRow }) {
         <div className="flex items-center gap-1.5 rounded-lg border border-red-300 bg-red-50 px-2 py-1">
           <input
             type="number"
-            name="days"
             min={1}
             max={365}
             value={days}
@@ -88,22 +96,17 @@ export default function ReportRow({ row }: { row: ReportQueueRow }) {
           />
           <span className="text-sm text-red-700">일</span>
           <button
-            type="submit"
-            name="action"
-            value="suspended"
+            type="button"
+            onClick={() => resolve('suspended')}
             disabled={pending}
             className="rounded-md bg-red-600 px-2.5 py-1 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-60"
           >
             정지
           </button>
         </div>
-      </form>
+      </div>
 
-      {state.error && (
-        <p role="alert" className="mt-2 text-sm text-red-700">
-          {state.error}
-        </p>
-      )}
+      {error && <p className="mt-2 text-sm text-red-700">{error}</p>}
     </li>
   )
 }

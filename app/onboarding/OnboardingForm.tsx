@@ -1,13 +1,12 @@
 'use client'
 
-import { useActionState, useState } from 'react'
-import { createProfile, type ProfileState } from '@/app/actions/profile'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { createProfile } from '@/lib/mock/auth'
 import { DEPARTMENTS } from '@/lib/departments'
 import { MAX_TAGS } from '@/lib/validation'
 import { MAX_AGE, MIN_AGE } from '@/lib/age'
-import type { Tag } from '@/lib/types'
-
-const initial: ProfileState = { error: null }
+import type { Gender, Tag } from '@/lib/types'
 
 /**
  * 온보딩 폼.
@@ -16,9 +15,16 @@ const initial: ProfileState = { error: null }
  * B가 components/TagPicker.tsx 를 완성하면 그것으로 교체한다 (팀 규칙: 같은 컴포넌트를 두 개 만들지 않는다).
  */
 export default function OnboardingForm({ tags }: { tags: Tag[] }) {
-  const [state, formAction, pending] = useActionState(createProfile, initial)
+  const router = useRouter()
+  const [nickname, setNickname] = useState('')
+  const [birthYear, setBirthYear] = useState('')
+  const [department, setDepartment] = useState('')
+  const [gender, setGender] = useState<Gender | ''>('')
+  const [bio, setBio] = useState('')
   const [selected, setSelected] = useState<number[]>([])
   const [tagNotice, setTagNotice] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [pending, setPending] = useState(false)
 
   const currentYear = new Date().getFullYear()
   const years = Array.from(
@@ -41,21 +47,37 @@ export default function OnboardingForm({ tags }: { tags: Tag[] }) {
     })
   }
 
-  return (
-    <form action={formAction} className="space-y-6">
-      {selected.map((id) => (
-        <input key={id} type="hidden" name="tag_ids" value={id} />
-      ))}
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setPending(true)
+    const result = createProfile({
+      nickname,
+      birthYear: Number(birthYear),
+      department,
+      gender: gender as Gender,
+      bio,
+      tagIds: selected,
+    })
+    setPending(false)
+    if (result.error) {
+      setError(result.error)
+      return
+    }
+    router.push('/search')
+  }
 
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div>
         <label htmlFor="nickname" className="block text-sm font-medium text-slate-700">
           닉네임
         </label>
         <input
           id="nickname"
-          name="nickname"
           maxLength={12}
           required
+          value={nickname}
+          onChange={(e) => setNickname(e.target.value)}
           placeholder="12자까지"
           className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
         />
@@ -68,9 +90,9 @@ export default function OnboardingForm({ tags }: { tags: Tag[] }) {
           </label>
           <select
             id="birth_year"
-            name="birth_year"
             required
-            defaultValue=""
+            value={birthYear}
+            onChange={(e) => setBirthYear(e.target.value)}
             className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 outline-none focus:border-brand-500"
           >
             <option value="" disabled>
@@ -95,9 +117,21 @@ export default function OnboardingForm({ tags }: { tags: Tag[] }) {
             ).map(([value, label]) => (
               <label
                 key={value}
-                className="flex-1 cursor-pointer rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-center has-checked:border-brand-600 has-checked:bg-brand-50 has-checked:text-brand-900"
+                className={
+                  gender === value
+                    ? 'flex-1 cursor-pointer rounded-lg border border-brand-600 bg-brand-50 px-3 py-2.5 text-center text-brand-900'
+                    : 'flex-1 cursor-pointer rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-center'
+                }
               >
-                <input type="radio" name="gender" value={value} required className="sr-only" />
+                <input
+                  type="radio"
+                  name="gender"
+                  value={value}
+                  checked={gender === value}
+                  onChange={() => setGender(value)}
+                  required
+                  className="sr-only"
+                />
                 {label}
               </label>
             ))}
@@ -111,9 +145,9 @@ export default function OnboardingForm({ tags }: { tags: Tag[] }) {
         </label>
         <select
           id="department"
-          name="department"
           required
-          defaultValue=""
+          value={department}
+          onChange={(e) => setDepartment(e.target.value)}
           className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 outline-none focus:border-brand-500"
         >
           <option value="" disabled>
@@ -165,17 +199,18 @@ export default function OnboardingForm({ tags }: { tags: Tag[] }) {
         </label>
         <input
           id="bio"
-          name="bio"
           maxLength={60}
           required
+          value={bio}
+          onChange={(e) => setBio(e.target.value)}
           placeholder="예) 같이 헬스장 갈 사람 구해요"
           className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
         />
       </div>
 
-      {state.error && (
+      {error && (
         <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-          {state.error}
+          {error}
         </p>
       )}
 

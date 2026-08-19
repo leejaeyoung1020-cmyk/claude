@@ -4,34 +4,33 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 현재 상태
 
-**Phase 0의 코드 쪽은 끝났고, Supabase 연결이 남았다.**
+**서버가 전혀 없다. Supabase를 포함해 어떤 백엔드도 쓰지 않는다 (2026-08-19 결정).**
 
-- 있는 것: Next.js 16 프로젝트, 마이그레이션 SQL 5개, `seed.sql`, 로그인·온보딩·정지 안내 화면, 단위 테스트 24개(통과), `npm run build` 통과
-- 없는 것: **`.env.local`**. Supabase 프로젝트를 만들고 URL·anon key를 넣어야 DB가 붙는다. 그 전까지 첫 화면에 "`.env.local` 이 없습니다"가 뜨고, 로그인은 동작하지 않는다
-- SQL 5개와 `seed.sql`은 **아직 실행되지 않았다.** Supabase 대시보드 SQL Editor에 001→002→003→004→005→seed 순서로 붙여넣어야 한다
+처음에는 실제 Supabase 프로젝트(DB·인증·RLS·RPC)로 만들었다가, "Supabase를 아예 쓰지 않고 시뮬레이션만 돌린다"로 결정이 바뀌면서 전부 걷어냈다. `supabase/` 폴더는 삭제했다(git 이력에는 남아 있다). 지금은:
 
-다음 작업은 [A-기반인증운영/tasks.md](A-기반인증운영/tasks.md)의 Phase 0-2·0-3·0-4다.
+- Next.js 앱 전체가 `'use client'`다. 데이터는 브라우저 `localStorage`/`sessionStorage`에만 있다
+- `.env.local`도, 회원가입도, 서버 설정도 필요 없다. `npm install && npm run dev`만 하면 바로 돌아간다
+- Phase 0·1·7(기반·로그인·관리자)은 코드가 끝났고 테스트 36개가 통과한다. 다음은 [A-기반인증운영/tasks.md](A-기반인증운영/tasks.md)의 Phase 9(통합)와 B·C·D의 각 트랙이다
 
-## 로그인 방식 — 시연 전용 지름길
+## 로그인 방식 — 시뮬레이션 전용
 
-**`@kyonggi.ac.kr` 이메일 한 칸만 입력하면 로그인된다.** 인증코드도 비밀번호도 없다.
+**`@kyonggi.ac.kr` 이메일 한 칸만 입력하면 로그인된다.** 인증코드도 비밀번호도 서버도 없다.
 
-내부적으로는 이메일에서 만들어낸 고정 비밀번호(`lib/auth.ts`의 `demoPassword`)로 Supabase 계정을 자동 생성·로그인시킨다. 그래서 세션·RLS·`auth.uid()`는 전부 진짜로 동작한다.
+`lib/mock/auth.ts`의 `signInWithSchoolEmail(email)`이 도메인만 확인하고, 그 이메일로 이미 있는 계정이면 그 계정을, 없으면 프로필 없는 새 계정을 `localStorage`에 만든다. "로그인한 사람"은 `sessionStorage`에 사용자 id 하나로만 표시된다.
 
-**이메일 주소만 알면 그 사람으로 로그인된다.** v1이 팀 내 시연 범위라서 택한 방식이고, 실제 학생을 받기로 하면 반드시 이메일 인증코드(OTP)로 되돌려야 한다. 도메인 검사는 이 방식에서도 DB 트리거(`004_email_guard.sql`)로 유지된다.
-
-Supabase 대시보드에서 **Authentication → Email의 "Confirm email"을 꺼야** 이 흐름이 동작한다.
+**이메일 주소만 알면 그 사람으로 로그인된다.** 팀 내 시연 범위이기 때문에 허용되는 지름길이다. 실제 서비스가 된다면 반드시 진짜 인증으로 되돌려야 한다.
 
 ## 문서 구조와 읽는 순서
 
 | 문서 | 내용 | 언제 읽나 |
 |---|---|---|
-| [SPEC.md](SPEC.md) | 기획서. 무엇을 왜 만드는지, 확정된 결정 15건, 미해결 20건 | 항상 먼저 |
-| [plan.md](plan.md) | 구현 계획. DB 스키마 SQL 전문, RLS 정책, RPC 목록, Phase 0~9 | 코드 쓰기 전 |
+| [SPEC.md](SPEC.md) | 기획서. 무엇을 왜 만드는지, 확정된 결정, 미해결 항목 | 항상 먼저 |
+| [plan.md](plan.md) | 구현 계획. `lib/mock/` 데이터 모양, 업무 규칙 함수 11개, Phase 0~9 | 코드 쓰기 전 |
 | [tasks.md](tasks.md) | 전체 인덱스. 공통 규칙, 일정, 트랙 간 의존 관계 | 작업 시작 전 |
 | `{A,B,C,D}-*/tasks.md` | 담당자별 체크리스트 | 자기 트랙 작업 중 |
+| [FILES.md](FILES.md) | 지금 어떤 파일이 있고 뭘 하는지, 검증 상태 | 뭐가 어디 있는지 헷갈릴 때 |
 
-**DB 스키마·RLS 정책·RPC 함수의 SQL 전문은 plan.md 안에 있다.** 새로 설계하지 말고 거기서 가져다 쓴다.
+**데이터 모양과 업무 규칙 함수 11개의 목록은 plan.md 안에 있다.** 실제 구현은 `lib/mock/api.ts`가 정답이다 — plan.md는 그걸 설명하는 문서다.
 
 ## 명령어
 
@@ -45,19 +44,19 @@ npm run typecheck                      # 타입 검사
 
 `npx tsc --noEmit`을 `next build` 없이 처음 돌리면 Next가 만드는 전역 타입이 아직 없어 실패할 수 있다. 그럴 때는 `npm run build`를 한 번 돌린 뒤 다시 검사한다.
 
-마이그레이션은 CLI가 아니라 **Supabase 대시보드 SQL Editor에 직접 붙여넣어 실행**한다. `supabase/migrations/*.sql`은 실행 기록 겸 형상 관리용이다.
-
 ## 아키텍처의 핵심 판단
 
-**업무 규칙은 전부 Postgres 함수(RPC)에 있고, 화면 코드에는 없다.**
+**업무 규칙은 전부 `lib/mock/api.ts`에 있고, 화면 코드에는 없다.**
 
-하루 신청 상한 5건, 차단 양방향 반영, 신고 임계치 3명, 정지 여부 판정 — 이 규칙들은 `supabase/migrations/003_functions.sql`의 `security definer` 함수 안에만 구현한다. Next.js 쪽은 RPC를 호출하고 오류 메시지를 그대로 보여주기만 한다.
+하루 신청 상한 5건, 차단 양방향 반영, 신고 임계치 3명, 정지 여부 판정 — 이 규칙들은 `lib/mock/api.ts`의 함수 안에만 구현한다(예전 Supabase RPC 11개를 그대로 옮긴 것이다). 화면 코드는 이 함수를 호출하고 `{ error }`를 그대로 보여주기만 한다.
 
 이렇게 한 이유는 4명이 서로 다른 화면을 동시에 만들기 때문이다. 규칙을 화면마다 구현하면 네 벌이 생기고 서로 어긋난다. **화면 코드에서 상한을 세거나 차단 여부를 판단하는 코드를 발견하면 그것은 버그다.**
 
-주요 RPC: `search_profiles` · `send_friend_request` · `respond_friend_request` · `block_user` / `unblock_user` · `report_user` · `mark_conversation_read` · `admin_resolve_report` (시그니처는 plan.md 참고)
+주요 함수: `searchProfiles` · `sendFriendRequest` · `respondFriendRequest` · `blockUser`/`unblockUser` · `reportUser` · `markConversationRead` · `adminResolveReport` (시그니처는 plan.md 참고)
 
-**RLS는 보안 장치가 아니라 기능 요구사항이다.** `blocks`와 `reports`의 select 정책을 `using (true)`로 열면 개발자 도구에서 "누가 나를 차단·신고했는지"가 그대로 보이고, SPEC 4.5의 "상대에게 알리지 않는다"가 무너진다.
+**접근 차단(로그인 안 됨/프로필 없음/정지 중)은 미들웨어가 아니라 각 페이지의 `useEffect`가 한다.** 서버가 없어 요청을 미리 가로챌 방법이 없다. `lib/mock/useCurrentProfile.ts`의 `useCurrentProfile()` 훅으로 로그인 상태를 읽고, `loading`이 끝난 뒤에 리다이렉트를 판단한다 — `app/login`·`app/onboarding`·`app/suspended`·`app/admin`이 이 패턴의 예시다.
+
+**"로그인한 사람"은 `sessionStorage`(탭마다 독립), 실제 데이터는 `localStorage`(탭끼리 공유)에 있다.** 이 분리 덕분에 같은 브라우저에서 탭 여러 개를 열어 서로 다른 계정으로 로그인하면서도, 데이터는 공유돼 친구 신청·채팅을 실제로 주고받을 수 있다. 반대로 **서로 다른 브라우저·기기끼리는 데이터가 전혀 공유되지 않는다** — 배포해도 팀원 4명이 각자 휴대폰으로 접속하면 서로를 찾을 수 없다. 시연은 한 브라우저의 탭 여러 개로 한다.
 
 ## 코드가 어기면 안 되는 것
 
@@ -65,8 +64,8 @@ SPEC에서 확정된 것들이다. 편의상 바꾸고 싶어지는 것만 추�
 
 | 규칙 | 어기면 |
 |---|---|
-| `@kyonggi.ac.kr` 이메일만 가입 (`auth.users` 트리거로 강제) | 아무나 들어옴 |
-| 인증 안 한 사용자는 어떤 화면도 못 봄 (`proxy.ts`) | SPEC 4.1 위반 |
+| `@kyonggi.ac.kr` 이메일만 가입 (`lib/validation.ts`의 `isSchoolEmail()`) | 아무나 들어옴 |
+| 인증 안 한 사용자는 어떤 화면도 못 봄 (각 페이지의 `useEffect` 가드) | SPEC 4.1 위반 |
 | 관심사 태그는 **고정 목록**, 자유 입력 금지 | 표기 차이로 검색이 갈라짐 |
 | 프로필 사진은 **선택** | 소개팅 앱과 구별이 사라짐 |
 | 성별 필터 기본값은 **"상관없음"** | 연애 앱이 됨 |
@@ -85,12 +84,12 @@ SPEC에서 확정된 것들이다. 편의상 바꾸고 싶어지는 것만 추�
 
 | 트랙 | 담당 영역 | 주 작업 파일 |
 |---|---|---|
-| A | 기반·인증·운영 | `supabase/**`, `lib/supabase/**`, `lib/types.ts`, `proxy.ts`, `app/login/**`, `app/onboarding`, `app/admin` |
+| A | 기반·인증·운영 | `lib/mock/**`, `lib/types.ts`, `app/login/**`, `app/onboarding`, `app/admin`, `app/suspended` |
 | B | 프로필·안전장치 | `app/me`, `components/TagPicker` `TagChip` `Avatar` `ReportDialog` |
 | C | 검색·친구 신청 | `app/search`, `app/profile/[id]`, `app/requests`, `components/ProfileCard` |
 | D | 채팅·밸런스게임 | `app/chat/**`, `components/MessageBubble` |
 
-- **`supabase/**`와 `lib/types.ts`는 A만 수정한다.** 스키마 변경이 필요하면 A에게 요청한다
+- **`lib/mock/**`와 `lib/types.ts`는 A만 수정한다.** 데이터 모양·업무 규칙 변경이 필요하면 A에게 요청한다
 - 두 곳이 겹친다: `app/profile/[id]`(C가 만들고 B가 차단·신고를 붙임), `app/chat/[id]`(D가 만들고 B가 신고 진입점을 붙임)
 - 강제되는 순서는 **Phase 0 하나뿐**이다. 그 뒤로는 시드 데이터 덕분에 B·C·D가 동시에 시작한다
 
@@ -104,8 +103,9 @@ SPEC에서 확정된 것들이다. 편의상 바꾸고 싶어지는 것만 추�
 
 `create-next-app`이 만든 그대로가 아니라 몇 군데가 다르다.
 
-- **`middleware.ts`가 아니라 `proxy.ts`다.** Next 16에서 이름이 바뀌었고, 내보내는 함수 이름도 `proxy`다. plan.md와 tasks.md의 "middleware.ts"는 이 파일을 가리킨다
+- **미들웨어(`middleware.ts`/`proxy.ts`)가 없다.** 한때 Next 16의 새 이름인 `proxy.ts`로 접근 차단을 했지만, 서버가 없는 지금 구조에서는 미들웨어가 로그인 여부를 확인할 방법이 없어(세션이 아니라 브라우저 `localStorage`에 있으므로) 완전히 삭제했다. 접근 차단은 각 페이지의 `useEffect`가 한다
 - `app/layout.tsx`에서 `LayoutProps<'/'>` 대신 `{ children: React.ReactNode }`를 쓴다. 전자는 빌드로 생성되는 전역 타입이라 `tsc --noEmit` 단독 실행에서 깨진다
+- `metadata`를 export하는 `app/layout.tsx`는 서버 컴포넌트로 남아야 한다. 거기서 쓰는 상수(`APP_NAME` 등)를 클라이언트 컴포넌트(`'use client'`)가 같이 가져다 쓰면 Turbopack이 `layout.tsx` 전체를 클라이언트 번들에 넣으려다 "metadata는 서버 전용" 오류를 낸다 — 그런 상수는 `lib/appName.ts`처럼 별도 파일로 뺀다
 - vitest 설정 파일은 `vitest.config.mts`다 (`.ts`면 CommonJS로 읽혀 경고가 난다)
 - `next dev`가 이 파일 맨 아래에 `nextjs-agent-rules` 블록을 자동으로 다시 넣는다. 지워도 되살아나므로 그냥 둔다
 

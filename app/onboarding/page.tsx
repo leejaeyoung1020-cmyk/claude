@@ -1,16 +1,28 @@
-import { createClient, hasSupabaseEnv } from '@/lib/supabase/server'
-import type { Tag } from '@/lib/types'
+'use client'
+
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { TAGS } from '@/lib/mock/seed'
+import { hasCompletedProfile } from '@/lib/mock/auth'
+import { useCurrentProfile } from '@/lib/mock/useCurrentProfile'
 import OnboardingForm from './OnboardingForm'
 
-export const dynamic = 'force-dynamic'
+export default function OnboardingPage() {
+  const router = useRouter()
+  const { profile, loading } = useCurrentProfile()
 
-export default async function OnboardingPage() {
-  let tags: Tag[] = []
+  useEffect(() => {
+    if (loading) return
+    if (!profile) router.replace('/login')
+    else if (hasCompletedProfile(profile)) router.replace('/search')
+  }, [loading, profile, router])
 
-  if (hasSupabaseEnv()) {
-    const supabase = await createClient()
-    const { data } = await supabase.from('interest_tags').select('id, label').order('id')
-    tags = (data as Tag[]) ?? []
+  if (loading || !profile || hasCompletedProfile(profile)) {
+    return (
+      <main className="mx-auto max-w-lg px-6 py-10">
+        <p className="text-sm text-slate-500">불러오는 중…</p>
+      </main>
+    )
   }
 
   return (
@@ -21,14 +33,7 @@ export default async function OnboardingPage() {
       </p>
 
       <div className="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-        {tags.length === 0 ? (
-          <p className="text-sm text-slate-500">
-            관심사 태그를 불러오지 못했습니다. <code>supabase/seed.sql</code> 을 실행했는지
-            확인해 주세요.
-          </p>
-        ) : (
-          <OnboardingForm tags={tags} />
-        )}
+        <OnboardingForm tags={TAGS} />
       </div>
     </main>
   )

@@ -2,7 +2,9 @@
 
 **맡는 것:** 조건 검색과 필터 4종, 상대 프로필 화면, 친구 신청 보내기·받기·수락·거절
 **담당 Phase:** 3 · 4
-**주로 건드리는 파일:** `app/search`, `app/profile/[id]`, `app/requests`, `components/ProfileCard.tsx`, `app/actions/search.ts` `requests.ts`, `lib/searchParams.ts` `limits.ts`
+**주로 건드리는 파일:** `app/search`, `app/profile/[id]`, `app/requests`, `components/ProfileCard.tsx`, `lib/searchParams.ts`
+
+**서버가 없다 (2026-08-19 결정).** `app/actions/*.ts` 서버 액션은 만들지 않는다 — 화면에서 `lib/mock/api.ts`의 함수를 직접 부른다. 자세한 내용은 `../CLAUDE.md`와 `../plan.md`를 본다.
 
 참고 문서: [../plan.md](../plan.md) · [../SPEC.md](../SPEC.md) · [../tasks.md](../tasks.md)
 
@@ -10,7 +12,7 @@
 
 ## 시작 전에 알아야 할 것
 
-**시작 조건:** A가 Phase 0을 끝내고 "시작해도 됨"이라고 알리면 시작한다. 더미 사용자 20명이 이미 들어 있으므로 **A의 인증도, B의 프로필 화면도 기다리지 않는다.**
+**시작 조건:** A의 Phase 0 코드(`lib/mock/**`)가 `main`에 있으면 바로 시작한다. 계정도 서버도 필요 없다 — `npm install && npm run dev`만 하면 더미 사용자 20명이 이미 들어 있다. **A의 로그인 화면도, B의 프로필 화면도 기다리지 않는다.**
 
 **내가 맡은 것이 이 앱의 중심 기능이다.** SPEC은 추천 알고리즘도 스와이프도 쓰지 않기로 했고, 사용자가 사람을 찾는 유일한 경로가 내 화면이다.
 
@@ -18,7 +20,7 @@
 
 | 받는 것 | 준 사람 | 없으면 |
 |---|---|---|
-| DB 스키마 · `search_profiles` · `send_friend_request` RPC | A (Phase 0) | 시작 불가 |
+| `lib/mock/**` (`searchProfiles`·`sendFriendRequest` 등) | A (Phase 0) | 시작 불가 |
 | `components/TagPicker.tsx` | B (Phase 2-2) | 태그 필터를 임시 체크박스로 만들어 두고 나중에 교체 |
 | `components/TagChip.tsx` · `Avatar.tsx` | B (Phase 2-3) | 임시 표시로 대체 |
 | `lib/age.ts`의 `ageFromBirthYear()` | B (Phase 2-1) | 임시 계산식으로 대체 |
@@ -34,7 +36,7 @@
 
 Phase 4를 끝내면 **B에게 반드시 알린다.** B의 Phase 6이 내 파일 위에서 시작된다.
 
-**하루 5건 상한은 내가 구현하지 않는다.** `send_friend_request` RPC 안에 이미 들어 있다. 나는 호출하고 오류 메시지를 보여주기만 한다. 화면에서 5건을 따로 세지 않는다 — 두 곳에서 세면 숫자가 어긋난다.
+**하루 5건 상한은 내가 구현하지 않는다.** `lib/mock/api.ts`의 `sendFriendRequest()` 안에 이미 들어 있다. 나는 호출하고 `{ error }`를 그대로 보여주기만 한다. 화면에서 5건을 따로 세지 않는다 — 두 곳에서 세면 숫자가 어긋난다. 표시용 카운터가 필요하면 `remainingRequestsToday()`를 부른다.
 
 ---
 
@@ -71,7 +73,7 @@ Phase 4를 끝내면 **B에게 반드시 알린다.** B의 Phase 6이 내 파일
 
 ### 3-3 검색 화면
 
-- [ ] `app/search/page.tsx` 뼈대 + 필터 없이 `search_profiles` 호출해 목록 표시
+- [ ] `app/search/page.tsx` 뼈대 + 필터 없이 `lib/mock/api.ts`의 `searchProfiles()` 호출해 목록 표시
 - [ ] 🔍 내 카드가 결과에 없는지 확인
 - [ ] 성별 선택 UI 추가 (남 / 여 / **상관없음(기본)**)
 - [ ] 나이대 슬라이더 추가 (19~30)
@@ -93,21 +95,19 @@ Phase 4를 끝내면 **B에게 반드시 알린다.** B의 Phase 6이 내 파일
 
 **끝나면 보이는 것:** 상대 프로필에서 인사말을 적어 신청을 보낸다. 6번째 신청은 거부된다. 받은 신청을 수락하면 대화방이 생긴다.
 
-### 4-1 남은 횟수 계산 (테스트 먼저)
+### 4-1 남은 횟수 계산 — A가 이미 만들어 뒀다
 
-- [ ] `tests/limits.test.ts` 작성 — `remainingRequests(0)` → 5, `remainingRequests(5)` → 0, `remainingRequests(7)` → 0 (음수 안 나옴)
-- [ ] `npx vitest run` → 실패 확인 🔍
-- [ ] `lib/limits.ts`에 `DAILY_REQUEST_LIMIT = 5`와 `remainingRequests(sentToday: number): number` 구현
-- [ ] `npx vitest run` → 통과 확인 🔍
-- [ ] 💾 `feat: 하루 신청 상한 계산`
+`lib/limits.ts`(`DAILY_REQUEST_LIMIT`·`remainingRequests()`)와 `tests/limits.test.ts`는 Phase 0에서 이미 끝났다. 새로 만들지 않고 가져다 쓴다. 실제 판정은 `lib/mock/api.ts`의 `sendFriendRequest()`가 한다 — `lib/limits.ts`는 화면 표시용 계산일 뿐이다.
+
+- [ ] `remainingRequestsToday()`(`lib/mock/api.ts`)로 실제 남은 횟수를 가져와 화면에 표시
 
 ### 4-2 상대 프로필 + 신청
 
 - [ ] `app/profile/[id]/page.tsx` — 상대 프로필 전체 표시 (`ProfileCard`보다 크게)
 - [ ] "친구 신청" 버튼 + 옆에 `오늘 {보낸수}/5` 카운터 표시
 - [ ] 버튼 클릭 → 인사말 입력창(1~200자, 글자 수 표시) 모달
-- [ ] `app/actions/requests.ts`의 `sendRequest()` → `send_friend_request` RPC 호출
-- [ ] RPC 오류 메시지를 그대로 사용자에게 보여준다 (한국어로 이미 작성돼 있다)
+- [ ] `lib/mock/api.ts`의 `sendFriendRequest(receiverId, greeting)`를 화면에서 직접 부른다 (서버 액션 없음)
+- [ ] 오류 메시지를 그대로 사용자에게 보여준다 (한국어로 이미 작성돼 있다)
 - [ ] 이미 신청한 상대면 버튼을 "신청함 (대기 중)"으로 바꾸고 비활성화
 - [ ] 🔍 인사말 비우고 신청 → "인사말을 입력해 주세요"
 - [ ] 🔍 신청 성공 → 버튼이 "신청함"으로 바뀌고 카운터가 1/5로 증가
@@ -120,9 +120,9 @@ Phase 4를 끝내면 **B에게 반드시 알린다.** B의 Phase 6이 내 파일
 - [ ] `app/requests/page.tsx` — 탭 2개 (받은 신청 / 보낸 신청)
 - [ ] 받은 신청: 인사말 + 프로필 요약 + 수락/거절 버튼
 - [ ] 보낸 신청: 상대 프로필 + 상태. **거절과 무응답을 똑같이 "대기 중"으로 표시** 🔍 (SPEC 4.4)
-- [ ] `respondRequest()` 서버 액션 → `respond_friend_request` RPC 호출
+- [ ] `lib/mock/api.ts`의 `respondFriendRequest(requestId, accept)`를 화면에서 직접 부른다
 - [ ] 수락 성공 시 반환된 대화방 id로 `/chat/[id]` 이동
-- [ ] 🔍 시크릿 창으로 두 번째 계정 로그인 → `/requests`에 신청이 보인다
+- [ ] 🔍 다른 탭에서 두 번째 계정으로 로그인 → `/requests`에 신청이 보인다
 - [ ] 🔍 수락 → 두 계정 모두 `/chat`에 대화방이 생긴다
 - [ ] 🔍 거절 → 보낸 쪽 화면에 "거절당했다"는 표시가 **없다**
 - [ ] 🔍 받은 신청 배지(개수)가 상단 네비게이션에 뜬다
@@ -139,7 +139,7 @@ Phase 4를 끝내면 **B에게 반드시 알린다.** B의 Phase 6이 내 파일
 - **거절 사실을 보낸 쪽에 알리지 않는다.** 거절과 무응답이 화면에서 구별되면 안 된다 (SPEC 4.4)
 - **수락 전에는 메시지를 보낼 수 없다.** 인사말 한 줄이 수락 전에 전달되는 전부다 (SPEC 4.4)
 - **인사말은 필수다.** 빈 신청을 허용하면 무성의한 대량 신청이 늘어난다 (SPEC 4.4)
-- **하루 5건 상한을 화면에서 따로 세지 않는다.** RPC가 판정한다. 화면은 카운터를 보여주기만 한다
+- **하루 5건 상한을 화면에서 따로 세지 않는다.** `lib/mock/api.ts`가 판정한다. 화면은 카운터를 보여주기만 한다
 
 ---
 

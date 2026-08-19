@@ -1,35 +1,21 @@
-import Link from 'next/link'
-import { createClient, hasSupabaseEnv } from '@/lib/supabase/server'
-import { APP_NAME } from './layout'
+'use client'
 
-export const dynamic = 'force-dynamic'
+import Link from 'next/link'
+import { useEffect, useState } from 'react'
+import { getStore } from '@/lib/mock/store'
+import { TAGS, BALANCE_QUESTIONS } from '@/lib/mock/seed'
+import { APP_NAME } from '@/lib/appName'
 
 /**
- * 랜딩 겸 Phase 0 연결 확인 화면.
- * DB가 붙었는지, 시드 데이터가 들어갔는지를 눈으로 볼 수 있어야 한다.
+ * 랜딩 겸 시뮬레이션 상태 확인 화면.
+ * 서버가 없으므로 "연결"은 없고, localStorage에 시드가 들어갔는지만 보여준다.
  */
-export default async function Home() {
-  let status: { ok: boolean; message: string } = {
-    ok: false,
-    message: '.env.local 이 없습니다 — Supabase URL과 anon key를 넣어 주세요',
-  }
+export default function Home() {
+  const [count, setCount] = useState<number | null>(null)
 
-  if (hasSupabaseEnv()) {
-    try {
-      const supabase = await createClient()
-      const [{ count: profiles }, { count: tags }, { count: questions }] = await Promise.all([
-        supabase.from('profiles').select('*', { count: 'exact', head: true }),
-        supabase.from('interest_tags').select('*', { count: 'exact', head: true }),
-        supabase.from('balance_questions').select('*', { count: 'exact', head: true }),
-      ])
-      status = {
-        ok: true,
-        message: `DB 연결됨 · 사용자 ${profiles ?? 0}명 · 태그 ${tags ?? 0}개 · 밸런스게임 질문 ${questions ?? 0}개`,
-      }
-    } catch (e) {
-      status = { ok: false, message: `DB 연결 실패: ${(e as Error).message}` }
-    }
-  }
+  useEffect(() => {
+    setCount(getStore().profiles.length)
+  }, [])
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
@@ -50,14 +36,10 @@ export default async function Home() {
         </Link>
       </div>
 
-      <p
-        className={
-          status.ok
-            ? 'mt-4 rounded-lg bg-emerald-50 px-3 py-2 text-center text-xs text-emerald-800'
-            : 'mt-4 rounded-lg bg-amber-50 px-3 py-2 text-center text-xs text-amber-800'
-        }
-      >
-        {status.message}
+      <p className="mt-4 rounded-lg bg-emerald-50 px-3 py-2 text-center text-xs text-emerald-800">
+        {count === null
+          ? '불러오는 중…'
+          : `시뮬레이션 모드 · 사용자 ${count}명 · 태그 ${TAGS.length}개 · 밸런스게임 질문 ${BALANCE_QUESTIONS.length}개`}
       </p>
     </main>
   )
