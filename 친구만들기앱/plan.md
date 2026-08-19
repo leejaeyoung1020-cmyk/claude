@@ -6,7 +6,7 @@
 
 **아키텍처:** Next.js(App Router) 한 개의 프로젝트가 화면과 서버 액션을 모두 담당하고, 데이터·인증·실시간·파일 저장은 Supabase가 맡는다. **업무 규칙(하루 신청 상한, 차단 반영, 신고 임계치)은 전부 Postgres 함수(RPC)에 넣는다.** 화면 코드는 규칙을 알 필요 없이 RPC만 호출하므로, 4명이 서로 다른 화면을 동시에 만들어도 규칙이 어긋나지 않는다.
 
-**기술 스택:** Next.js 15 (App Router, TypeScript) / Tailwind CSS / Supabase (Postgres · Auth OTP · Realtime · Storage) / Vitest / Vercel 배포
+**기술 스택:** Next.js 16 (App Router, TypeScript) / Tailwind CSS / Supabase (Postgres · Auth · Realtime · Storage) / Vitest / Vercel 배포
 
 **스펙:** [SPEC.md](SPEC.md) — 이 계획서는 SPEC의 v1 범위(4장)만 구현한다. 커뮤니티·유료 기능은 대상이 아니다.
 
@@ -71,8 +71,7 @@ SPEC에서 가져온 프로젝트 전체 규칙이다. **모든 단계에 자동
 ├─ app/
 │  ├─ layout.tsx  globals.css
 │  ├─ page.tsx                   랜딩 → 로그인
-│  ├─ login/page.tsx             이메일 입력
-│  ├─ login/verify/page.tsx      6자리 코드 입력
+│  ├─ login/page.tsx             학교 이메일 입력 (이것만으로 로그인)
 │  ├─ onboarding/page.tsx        프로필 최초 작성
 │  ├─ me/page.tsx                내 프로필 편집
 │  ├─ search/page.tsx            검색 + 필터
@@ -84,6 +83,7 @@ SPEC에서 가져온 프로젝트 전체 규칙이다. **모든 단계에 자동
 │  ├─ admin/page.tsx             신고 목록 · 처리
 │  ├─ suspended/page.tsx         정지 안내
 │  └─ actions/*.ts               서버 액션 (RPC 호출 래퍼)
+├─ proxy.ts                      접근 차단 (Next 16에서 middleware.ts의 새 이름)
 ├─ tests/                        Vitest 단위 테스트
 └─ docs/QA.md                    단계별 눈 확인 절차 기록
 ```
@@ -447,31 +447,38 @@ create trigger enforce_school_email_trigger
 
 ## Phase 1 — 재학생 인증 (담당 A)
 
-**끝나면 보이는 것:** 본인 학교 메일로 6자리 코드를 받아 로그인하고, 프로필을 작성해 검색 화면까지 들어간다. 다른 도메인 메일은 거부된다.
+**끝나면 보이는 것:** 학교 이메일 주소를 입력하면 바로 로그인되고, 프로필을 작성해 검색 화면까지 들어간다. 다른 도메인 메일은 거부된다.
 
-**만드는 파일:** `app/login/page.tsx`, `app/login/verify/page.tsx`, `app/onboarding/page.tsx`, `app/actions/auth.ts`, `middleware.ts`, `lib/validation.ts`, `tests/validation.test.ts`
+**만드는 파일:** `app/login/page.tsx`, `app/onboarding/page.tsx`, `app/actions/auth.ts`, `app/actions/profile.ts`, `proxy.ts`, `lib/validation.ts`, `lib/auth.ts`, `tests/validation.test.ts`
 
-**흐름**
+**흐름 (2026-08-19 변경 — 시연 전용)**
+
+당초 6자리 인증코드를 메일로 보내기로 했으나, v1이 팀 내 시연 범위로 정해지면서 **메일을 아예 보내지 않는 방식**으로 바꿨다. 이메일에서 만들어낸 고정 비밀번호로 계정을 자동 생성·로그인시키므로 세션·RLS·`auth.uid()`는 전부 진짜로 동작하고, 사용자에게는 이메일 한 칸만 보인다.
 
 ```
-/login  이메일 입력 → supabase.auth.signInWithOtp({ email })
-   → /login/verify  6자리 입력 → verifyOtp({ email, token, type:'email' })
+/login  학교 이메일 입력
+   → isSchoolEmail() 로 도메인 확인
+   → signInWithPassword(email, demoPassword(email))
+       실패하면 signUp 후 재시도
    → 프로필 있으면 /search, 없으면 /onboarding
 ```
 
-**`middleware.ts`가 지켜야 할 것 (SPEC 4.1: 인증 전 어떤 화면도 못 봄)**
+**이메일 주소만 알면 그 사람으로 로그인된다.** 실제 학생을 받기로 하면 반드시 인증코드 방식으로 되돌린다. 도메인 검사는 이 방식에서도 DB 트리거(`004_email_guard.sql`)로 유지된다.
+
+Supabase 대시보드에서 **Authentication → Email의 "Confirm email"을 꺼야** 동작한다.
+
+**`proxy.ts`가 지켜야 할 것 (SPEC 4.1: 인증 전 어떤 화면도 못 봄)**
 
 - 세션 없음 → `/login`으로
 - 세션 있고 프로필 없음 → `/onboarding`으로
 - `suspended_until > now()` → `/suspended`로
-- 예외 경로: `/login`, `/login/verify`, `/suspended`
+- 예외 경로: `/`, `/login`, `/suspended`
 
 **눈으로 확인**
 
-- [ ] `test@gmail.com` 입력 → "경기대학교 이메일만 가입할 수 있습니다" 오류가 뜬다
-- [ ] 본인 `@kyonggi.ac.kr` 주소 입력 → 실제 메일함에 6자리 코드가 도착한다
-- [ ] 틀린 코드 입력 → 오류 문구가 뜨고 화면이 넘어가지 않는다
-- [ ] 맞는 코드 입력 → `/onboarding`으로 이동한다
+- [ ] `test@gmail.com` 입력 → "경기대학교 이메일(@kyonggi.ac.kr)만 사용할 수 있습니다" 오류가 뜬다
+- [ ] 본인 `@kyonggi.ac.kr` 주소 입력 → 메일 없이 바로 `/onboarding`으로 넘어간다
+- [ ] 같은 이메일로 다시 로그인 → 온보딩을 건너뛰고 바로 검색 화면으로 간다
 - [ ] 프로필 작성 완료 → `/search`로 이동하고, Supabase `profiles`에 내 행이 생긴다
 - [ ] 로그아웃 후 주소창에 `/search`를 직접 입력 → `/login`으로 튕긴다
 
@@ -646,7 +653,7 @@ Phase 0에서 `alter publication supabase_realtime add table messages;`를 실�
 
 - 신고 목록: 신고 대상 / 서로 다른 신고자 수 / 최근 신고일 / 사유 목록. **신고자 수 많은 순**으로 정렬
 - 각 항목에 `기각` · `경고` · `정지(일수 입력, 기본 30)` 버튼
-- 정지된 사용자는 `middleware.ts`에 의해 `/suspended`로 보내지고, 사유와 해제 예정일, 문의 이메일 주소를 본다
+- 정지된 사용자는 `proxy.ts`에 의해 `/suspended`로 보내지고, 사유와 해제 예정일, 문의 이메일 주소를 본다
 
 **반드시 지킬 것**
 
