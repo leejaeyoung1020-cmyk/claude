@@ -159,6 +159,15 @@ export function respondFriendRequest(requestId: string, accept: boolean): Result
   return ok(conv.id)
 }
 
+/** 내가 고른 관심사 태그 id 목록. 내 프로필 편집 화면에서 초기값으로 쓴다 */
+export function myTagIds(): number[] {
+  const me = requireUser()
+  if (!me) return []
+  return getStore()
+    .profileTags.filter((t) => t.profile_id === me)
+    .map((t) => t.tag_id)
+}
+
 // ---------------------------------------------------------------
 // 차단 (SPEC 4.5 — 제재 아님, 양방향, 상대는 모른다)
 // ---------------------------------------------------------------
@@ -188,6 +197,27 @@ export function myBlockedList(): string[] {
   return getStore()
     .blocks.filter((b) => b.blocker_id === me)
     .map((b) => b.blocked_id)
+}
+
+/** 숨긴 사람 목록 화면에 쓴다. 정지 여부와 무관하게 내가 차단한 사람은 전부 보여준다 */
+export function myBlockedProfiles(): ProfileCard[] {
+  const store = getStore()
+  return myBlockedList()
+    .map((id) => store.profiles.find((p) => p.id === id))
+    .filter((p): p is (typeof store.profiles)[number] => Boolean(p))
+    .map((p) => ({
+      id: p.id,
+      nickname: p.nickname,
+      birth_year: p.birth_year,
+      department: p.department,
+      gender: p.gender,
+      bio: p.bio,
+      photo_url: p.photo_url,
+      tag_labels: store.profileTags
+        .filter((t) => t.profile_id === p.id)
+        .map((t) => TAGS.find((tag) => tag.id === t.tag_id)?.label)
+        .filter((label): label is string => Boolean(label)),
+    }))
 }
 
 // ---------------------------------------------------------------

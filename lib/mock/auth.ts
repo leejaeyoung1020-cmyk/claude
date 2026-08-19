@@ -108,3 +108,41 @@ export function createProfile(input: CreateProfileInput): { error: string | null
   persist(store)
   return { error: null }
 }
+
+export type UpdateProfileInput = CreateProfileInput & { photoUrl?: string | null }
+
+/** 이미 프로필이 있는 사람이 내용을 고칠 때 쓴다. photoUrl을 생략하면 기존 사진을 그대로 둔다 */
+export function updateProfile(input: UpdateProfileInput): { error: string | null } {
+  const id = getCurrentUserId()
+  if (!id) return { error: '로그인이 필요합니다' }
+
+  if (!isValidNickname(input.nickname)) return { error: '닉네임은 1~12자로 입력해 주세요' }
+  if (!Number.isInteger(input.birthYear)) return { error: '출생연도를 골라 주세요' }
+  if (!input.department) return { error: '학과를 골라 주세요' }
+  if (input.gender !== 'male' && input.gender !== 'female') return { error: '성별을 골라 주세요' }
+  if (!isValidBio(input.bio)) return { error: '한 줄 소개는 1~60자로 입력해 주세요' }
+  if (input.tagIds.length < 1) return { error: '관심사 태그를 하나 이상 골라 주세요' }
+  if (input.tagIds.length > MAX_TAGS) return { error: `관심사 태그는 최대 ${MAX_TAGS}개까지예요` }
+
+  const age = new Date().getFullYear() - input.birthYear
+  if (age < MIN_AGE || age > MAX_AGE) {
+    return { error: `이 서비스는 만 ${MIN_AGE}~${MAX_AGE}세를 대상으로 해요` }
+  }
+
+  const store = getStore()
+  const profile = store.profiles.find((p) => p.id === id)
+  if (!profile) return { error: '계정을 찾을 수 없습니다' }
+
+  profile.nickname = input.nickname.trim()
+  profile.birth_year = input.birthYear
+  profile.department = input.department
+  profile.gender = input.gender
+  profile.bio = input.bio.trim()
+  if (input.photoUrl !== undefined) profile.photo_url = input.photoUrl
+
+  store.profileTags = store.profileTags.filter((t) => t.profile_id !== id)
+  store.profileTags.push(...input.tagIds.map((tag_id) => ({ profile_id: id, tag_id })))
+
+  persist(store)
+  return { error: null }
+}
