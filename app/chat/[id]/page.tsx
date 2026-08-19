@@ -11,6 +11,7 @@ import type { Message, ProfileCard } from '@/lib/types'
 import Avatar from '@/components/Avatar'
 import NavBar from '@/components/NavBar'
 import MessageBubble from '@/components/MessageBubble'
+import ReportDialog from '@/components/ReportDialog'
 
 function Loading() {
   return (
@@ -31,6 +32,7 @@ export default function ChatRoomPage() {
   const [messages, setMessages] = useState<Message[]>([])
   const [draft, setDraft] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [reportDialogOpen, setReportDialogOpen] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -114,12 +116,21 @@ export default function ChatRoomPage() {
               <Avatar photoUrl={peer.photo_url} nickname={peer.nickname} seed={peer.id} />
               <p className="font-semibold text-slate-900">{peer.nickname}</p>
             </div>
-            <Link
-              href={`/chat/${conversationId}/meet`}
-              className="rounded-lg border border-brand-200 bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-700 hover:bg-brand-100"
-            >
-              만났어요
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                href={`/chat/${conversationId}/meet`}
+                className="rounded-lg border border-brand-200 bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-700 hover:bg-brand-100"
+              >
+                만났어요
+              </Link>
+              <button
+                type="button"
+                onClick={() => setReportDialogOpen(true)}
+                className="text-sm text-slate-400 hover:text-red-700"
+              >
+                신고하기
+              </button>
+            </div>
           </div>
         )}
 
@@ -151,6 +162,10 @@ export default function ChatRoomPage() {
           </button>
         </div>
       </main>
+
+      {reportDialogOpen && peer && (
+        <ReportDialog targetId={peer.id} onClose={() => setReportDialogOpen(false)} onSubmitted={() => router.replace('/chat')} />
+      )}
     </>
   )
 }

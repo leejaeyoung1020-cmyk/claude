@@ -143,6 +143,15 @@ describe('채팅 (SPEC 4.4)', () => {
     expect(list.find((c) => c.conversationId === 'c1')).toBeTruthy()
   })
 
+  it('서로 차단하면 대화방이 양쪽 목록에서 모두 사라진다 (SPEC 4.5)', () => {
+    setCurrentUserId('u4')
+    blockUser('u9')
+    expect(getMyConversations().find((c) => c.conversationId === 'c1')).toBeUndefined()
+
+    setCurrentUserId('u9')
+    expect(getMyConversations().find((c) => c.conversationId === 'c1')).toBeUndefined()
+  })
+
   it('내 대화방이 아니면 메시지를 볼 수도 보낼 수도 없다', () => {
     setCurrentUserId('u2') // c1 참여자가 아니다
     expect(getConversationMessages('c1')).toEqual([])

@@ -11,7 +11,9 @@ import type { ProfileCard as ProfileCardType } from '@/lib/types'
 import Avatar from '@/components/Avatar'
 import TagChip from '@/components/TagChip'
 import NavBar from '@/components/NavBar'
+import ReportDialog from '@/components/ReportDialog'
 import GreetingDialog from './GreetingDialog'
+import BlockConfirmDialog from './BlockConfirmDialog'
 
 function Loading() {
   return (
@@ -31,6 +33,8 @@ export default function ProfileDetailPage() {
   const [sent, setSent] = useState(false)
   const [remaining, setRemaining] = useState(DAILY_REQUEST_LIMIT)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [blockDialogOpen, setBlockDialogOpen] = useState(false)
+  const [reportDialogOpen, setReportDialogOpen] = useState(false)
 
   useEffect(() => {
     if (loading) return
@@ -110,10 +114,33 @@ export default function ProfileDetailPage() {
               오늘 {sentToday}/{DAILY_REQUEST_LIMIT}
             </span>
           </div>
+
+          <div className="mt-3 flex gap-3 text-sm">
+            <button type="button" onClick={() => setBlockDialogOpen(true)} className="text-slate-500 hover:text-slate-700">
+              이 사람 숨기기
+            </button>
+            <button type="button" onClick={() => setReportDialogOpen(true)} className="text-slate-500 hover:text-red-700">
+              신고하기
+            </button>
+          </div>
         </div>
       </main>
 
       {dialogOpen && <GreetingDialog targetId={target.id} onClose={() => setDialogOpen(false)} onSent={handleSent} />}
+      {blockDialogOpen && (
+        <BlockConfirmDialog
+          targetId={target.id}
+          onClose={() => setBlockDialogOpen(false)}
+          onBlocked={() => router.replace('/search')}
+        />
+      )}
+      {reportDialogOpen && (
+        <ReportDialog
+          targetId={target.id}
+          onClose={() => setReportDialogOpen(false)}
+          onSubmitted={() => router.replace('/search')}
+        />
+      )}
     </>
   )
 }

@@ -373,6 +373,7 @@ export function getMyConversations(): ConversationSummary[] {
 
   return store.conversations
     .filter((c) => c.user_a === me || c.user_b === me)
+    .filter((c) => !isBlockedEitherWay(store, me, c.user_a === me ? c.user_b : c.user_a))
     .map((c) => {
       const peerId = c.user_a === me ? c.user_b : c.user_a
       const peerProfile = store.profiles.find((p) => p.id === peerId)!
