@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { hasCompletedProfile, isSuspended } from '@/lib/mock/auth'
 import { useCurrentProfile } from '@/lib/mock/useCurrentProfile'
@@ -108,9 +109,17 @@ export default function ChatRoomPage() {
       <NavBar />
       <main className="mx-auto flex h-[calc(100vh-72px)] max-w-lg flex-col px-6 py-6">
         {peer && (
-          <div className="flex items-center gap-3 border-b border-slate-200 pb-3">
-            <Avatar photoUrl={peer.photo_url} nickname={peer.nickname} seed={peer.id} />
-            <p className="font-semibold text-slate-900">{peer.nickname}</p>
+          <div className="flex items-center justify-between gap-3 border-b border-slate-200 pb-3">
+            <div className="flex items-center gap-3">
+              <Avatar photoUrl={peer.photo_url} nickname={peer.nickname} seed={peer.id} />
+              <p className="font-semibold text-slate-900">{peer.nickname}</p>
+            </div>
+            <Link
+              href={`/chat/${conversationId}/meet`}
+              className="rounded-lg border border-brand-200 bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-700 hover:bg-brand-100"
+            >
+              만났어요
+            </Link>
           </div>
         )}
 
